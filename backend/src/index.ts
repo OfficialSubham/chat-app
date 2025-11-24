@@ -16,10 +16,22 @@ io.on("connection", (socket) => {
   socket.on("user-message", (msg) => {
     //When socket sends a user message this runs
     console.log(msg);
-    //As io is the websocket server it will send it to everyone
+    //As io is the websocket server it will broadcast it to everyone including the sender
+    //socket.broadcast.emit send it to everyone except the sender
     // now we are emiting the message to the all person in the socket
     io.emit("message", msg);
   });
+
+  //Handleing joing room
+  socket.on("join-room", (roomId) => {
+    console.log(roomId);
+    socket.join(roomId);
+  });
+  socket.on("send-message", ({ roomId, msg, userId }) => {
+    console.log(roomId, msg, userId);
+    io.to(roomId).emit("text-message", { userId, msg });
+  });
+
   // When socket is on but user got or disconnect this runs
   socket.on("disconnect", () => {
     console.log("user disconnected");
