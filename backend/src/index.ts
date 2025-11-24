@@ -13,6 +13,17 @@ const io = new Server(server);
 //we can also call it client but in socket io world everone is socket
 io.on("connection", (socket) => {
   console.log("A new user is connected", socket.id);
+  socket.on("user-message", (msg) => {
+    //When socket sends a user message this runs
+    console.log(msg);
+    //As io is the websocket server it will send it to everyone
+    // now we are emiting the message to the all person in the socket
+    io.emit("message", msg);
+  });
+  // When socket is on but user got or disconnect this runs
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+  });
 });
 
 //Express will handle all the http
