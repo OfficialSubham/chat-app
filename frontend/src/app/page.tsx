@@ -9,7 +9,7 @@ type MessageType = {
 };
 
 export default function Home() {
-  // const [socket, setSocket] = useState<Socket<DefaultEventsMap> | null>(null);
+  const [socket, setSocket] = useState<Socket<DefaultEventsMap> | null>(null);
 
   const socketRef = useRef<Socket<DefaultEventsMap> | null>(null);
 
@@ -36,12 +36,7 @@ export default function Home() {
   //   console.log(socket);
   // }, [socket]);
   const [inputMessage, setInputMessage] = useState("");
-  const [messages, setMessages] = useState<MessageType[]>([
-    {
-      userId: "xyz",
-      message: "hello there",
-    },
-  ]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [inputRoomId, setInputRoomId] = useState("");
   const [roomId, setRoomId] = useState("");
   const [currentUserId, setCurrentUserId] = useState("");
@@ -53,14 +48,35 @@ export default function Home() {
     setInputRoomId(e.target.value);
   };
   const handleJoinRoom = () => {
+    if (!socket) return;
+    //Now giving the current input room id
+    //Cause i actually forget about the usestate didnot set the value
+    //instantly
     setRoomId(inputRoomId);
+    socket.emit("join-room", inputRoomId);
   };
   const handleSendMessage = () => {
-    console.log(inputMessage);
-    if (!inputMessage) return;
-    socketRef.current?.emit("user-message", inputMessage);
+    //If the user is not connected with room no message
+    if (!inputMessage || !socket || roomId) return;
+    socket.emit("send-message", {
+      roomId,
+      msg: inputMessage,
+      userId: currentUserId,
+    });
     setInputMessage("");
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("text-message", ({ userId, msg }) => {
+      console.log("Recieved message : ", msg);
+      console.log(userId);
+      setMessages((pre) => pre.concat({ userId, message: msg }));
+    });
+
+    return () => {};
+  }, [socket]);
 
   useEffect(() => {
     const s = io("http://localhost:9000", {
@@ -71,12 +87,11 @@ export default function Home() {
     s.on("connect", () => {
       console.log("connected to backend", s.id);
       setCurrentUserId(s.id || "");
+      setSocket(s);
     });
-
-    s.on("message", (msg) => {
-      console.log("Recieved message : ", msg);
-      setMessages((pre) => pre.concat(msg));
-    });
+    return () => {
+      s.disconnect();
+    };
   }, []);
   return (
     <div className="max-w-md mx-auto">
@@ -113,6 +128,7 @@ export default function Home() {
           placeholder="Enter message..."
           value={inputMessage}
           onChange={handleOnchange}
+          onKeyDown={(e) => e.key == "Enter" && handleSendMessage()}
         />
 
         <button
