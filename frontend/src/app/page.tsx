@@ -57,7 +57,7 @@ export default function Home() {
   };
   const handleSendMessage = () => {
     //If the user is not connected with room no message
-    if (!inputMessage || !socket || roomId) return;
+    if (!inputMessage || !socket || !roomId) return;
     socket.emit("send-message", {
       roomId,
       msg: inputMessage,
