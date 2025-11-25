@@ -35,13 +35,22 @@ io.on("connection", (socket) => {
   });
 
   //Handleing joing room
-  socket.on("join-room", (roomId) => {
+  socket.on("join-room", ({ roomId, username }) => {
     console.log(roomId);
     socket.join(roomId);
+    socket.to(roomId).emit("join-room", username);
   });
-  socket.on("send-message", ({ roomId, msg, userId }) => {
-    console.log(roomId, msg, userId);
-    io.to(roomId).emit("text-message", { userId, msg });
+
+  //Handleing sending message
+  socket.on("send-message", ({ roomId, msg, username }) => {
+    console.log(roomId, msg, username);
+    io.to(roomId).emit("text-message", { username, msg, system: false });
+  });
+
+  //handling left chat
+  socket.on("left-room", ({ roomId, username }) => {
+    socket.leave(roomId);
+    socket.to(roomId).emit("user-left", username);
   });
 
   // When socket is on but user got or disconnect this runs
