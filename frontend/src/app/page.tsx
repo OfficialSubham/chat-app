@@ -55,6 +55,7 @@ export default function Home() {
   const handleSetUserName = () => {
     if (inputUserName.length > 20)
       return alert("Enter a username with 20 or less characters");
+    setUserName(inputUserName);
   };
 
   const handleUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,8 +73,14 @@ export default function Home() {
     //Cause i actually forget about the usestate didnot set the value
     //instantly
     setRoomId(inputRoomId);
-    socket.emit("join-room", inputRoomId);
+    socket.emit("join-room", { roomId: inputRoomId, username: userName });
   };
+
+  const handleLeaveRoom = () => {
+    if (!socket) return;
+    socket.emit("left-room", { roomId, username: userName });
+  };
+
   const handleSendMessage = () => {
     //If the user is not connected with room no message
     if (!inputMessage || !socket || !roomId) return;
@@ -81,6 +88,7 @@ export default function Home() {
       roomId,
       msg: inputMessage,
       userId: currentUserName,
+      username: userName,
     });
     setInputMessage("");
   };
@@ -88,9 +96,22 @@ export default function Home() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("text-message", ({ username, msg, system = false }) => {
+    socket.on("text-message", ({ username, msg, system }) => {
+      console.log(username);
+      console.log("hello");
       setMessages((pre) => pre.concat({ username, message: msg, system }));
       focusRef.current?.scrollIntoView();
+    });
+    socket.on("user-left", (username) => {
+      setMessages((pre) =>
+        pre.concat({ username, message: "left the chat", system: true })
+      );
+    });
+
+    socket.on("join-room", (username) => {
+      setMessages((pre) =>
+        pre.concat({ username, message: "joined the chat", system: true })
+      );
     });
 
     return () => {};
@@ -108,6 +129,7 @@ export default function Home() {
       setSocket(s);
     });
     return () => {
+      s.emit("left-room", { roomId, username: userName });
       s.disconnect();
     };
   }, []);
@@ -124,8 +146,11 @@ export default function Home() {
           </div>
         ) : (
           <div>
-            <label htmlFor="username" className="text-xs">
-              Username (Optional)
+            <label
+              htmlFor="roomid"
+              className="text-xs after:content-['*'] after:text-red-500"
+            >
+              Username
             </label>
             <div>
               <input
@@ -152,7 +177,10 @@ export default function Home() {
             <div className="px-5 py-2 bg-neutral-100  w-fit rounded-md shadow-sm inset-shadow-sm ">
               {roomId}
             </div>
-            <button className="bg-red-200 rounded-md px-5 py-2">
+            <button
+              className="bg-red-200 rounded-md px-5 py-2"
+              onClick={handleLeaveRoom}
+            >
               Leave Room
             </button>
           </div>
@@ -189,15 +217,14 @@ export default function Home() {
             return (
               <p
                 key={idx}
-                className="text-center bg-neutral-200 w-fit mx-auto px-2 rounded-2xl text-xs"
+                className="text-center bg-neutral-200 w-fit mx-auto px-2 rounded tracking-wide text-xs"
               >
-                {message}
+                {username} {message}
               </p>
             );
           }
-          return userName == currentUserName ? (
+          return username == userName ? (
             <div key={idx} className="flex justify-end">
-              <span className="text-[10px]">{username}</span>
               <p className="py-1 bg-green-300 w-fit px-1 rounded-l-lg rounded-tr-2xl relative">
                 {message}
               </p>
