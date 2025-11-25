@@ -37,13 +37,7 @@ export default function Home() {
   //   console.log(socket);
   // }, [socket]);
   const [inputMessage, setInputMessage] = useState("");
-  const [messages, setMessages] = useState<MessageType[]>([
-    {
-      username: "xyzabcdefghijklmnop",
-      message: "haskdjajskldj",
-      system: true,
-    },
-  ]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [inputRoomId, setInputRoomId] = useState("");
   const [roomId, setRoomId] = useState("");
   const [currentUserName, setcurrentUserName] = useState("");
@@ -74,10 +68,13 @@ export default function Home() {
     //instantly
     setRoomId(inputRoomId);
     socket.emit("join-room", { roomId: inputRoomId, username: userName });
+    setInputRoomId("");
   };
 
   const handleLeaveRoom = () => {
     if (!socket) return;
+    setMessages([]);
+    setRoomId("");
     socket.emit("left-room", { roomId, username: userName });
   };
 
@@ -100,7 +97,6 @@ export default function Home() {
       console.log(username);
       console.log("hello");
       setMessages((pre) => pre.concat({ username, message: msg, system }));
-      focusRef.current?.scrollIntoView();
     });
     socket.on("user-left", (username) => {
       setMessages((pre) =>
@@ -116,6 +112,12 @@ export default function Home() {
 
     return () => {};
   }, [socket]);
+
+  useEffect(() => {
+    if (focusRef.current) {
+      focusRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   useEffect(() => {
     const s = io("http://192.168.31.118:9000", {
@@ -211,7 +213,7 @@ export default function Home() {
         )}
       </div>
 
-      <div className="overflow-y-scroll flex flex-col gap-2 bg-neutral-100 rounded-md shadow  h-70 w-100 no-scrollbar-arrows p-2">
+      <div className="overflow-y-scroll flex flex-col gap-2 bg-neutral-100 rounded-md shadow  h-72 w-100 no-scrollbar-arrows p-2">
         {messages?.map(({ username, message, system }, idx) => {
           if (system) {
             return (
@@ -239,7 +241,7 @@ export default function Home() {
           );
         })}
 
-        <div className="p-3 w-full bg-neutral-100" ref={focusRef}></div>
+        <div className="p-2 w-full bg-neutral-100" ref={focusRef}></div>
       </div>
 
       <div className="mt-10 flex justify-center">
