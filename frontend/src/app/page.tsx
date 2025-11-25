@@ -6,6 +6,7 @@ import { io, Socket } from "socket.io-client";
 type MessageType = {
   username: string;
   message: string;
+  system: boolean;
 };
 
 export default function Home() {
@@ -40,6 +41,7 @@ export default function Home() {
     {
       username: "xyzabcdefghijklmnop",
       message: "haskdjajskldj",
+      system: true,
     },
   ]);
   const [inputRoomId, setInputRoomId] = useState("");
@@ -86,8 +88,8 @@ export default function Home() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("text-message", ({ username, msg }) => {
-      setMessages((pre) => pre.concat({ username, message: msg }));
+    socket.on("text-message", ({ username, msg, system = false }) => {
+      setMessages((pre) => pre.concat({ username, message: msg, system }));
       focusRef.current?.scrollIntoView();
     });
 
@@ -146,8 +148,8 @@ export default function Home() {
 
       <div>
         {roomId ? (
-          <div className="flex gap-2 items-center">
-            <div className="px-5 py-1 bg-neutral-100  w-fit rounded-md shadow-sm inset-shadow-sm mb-3">
+          <div className="flex gap-2 mb-3">
+            <div className="px-5 py-2 bg-neutral-100  w-fit rounded-md shadow-sm inset-shadow-sm ">
               {roomId}
             </div>
             <button className="bg-red-200 rounded-md px-5 py-2">
@@ -182,7 +184,17 @@ export default function Home() {
       </div>
 
       <div className="overflow-y-scroll flex flex-col gap-2 bg-neutral-100 rounded-md shadow  h-70 w-100 no-scrollbar-arrows p-2">
-        {messages?.map(({ username, message }, idx) => {
+        {messages?.map(({ username, message, system }, idx) => {
+          if (system) {
+            return (
+              <p
+                key={idx}
+                className="text-center bg-neutral-200 w-fit mx-auto px-2 rounded-2xl text-xs"
+              >
+                {message}
+              </p>
+            );
+          }
           return userName == currentUserName ? (
             <div key={idx} className="flex justify-end">
               <span className="text-[10px]">{username}</span>
@@ -199,6 +211,7 @@ export default function Home() {
             </div>
           );
         })}
+
         <div className="p-3 w-full bg-neutral-100" ref={focusRef}></div>
       </div>
 
